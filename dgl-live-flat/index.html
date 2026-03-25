@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DGL Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f0f5ff;--surface:#fff;--card:#fff;--border:#dde6f7;
+    --blue-dark:#1a3a6b;--blue:#2563eb;--blue-mid:#3b82f6;
+    --blue-pale:#eff6ff;--blue-pale2:#dbeafe;
+    --cyan:#0891b2;--green:#059669;--red:#dc2626;
+    --amber:#d97706;--purple:#7c3aed;
+    --text:#0f172a;--text2:#334155;--muted:#64748b;
+    --sidebar:#1a3a6b;--sidebar-text:#c8d9f5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;overflow-x:hidden;}
+
+  /* SIDEBAR */
+  .sidebar{width:248px;min-height:100vh;background:var(--sidebar);position:fixed;top:0;left:0;z-index:100;display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(26,58,107,.18);}
+  .logo{padding:26px 22px 20px;border-bottom:1px solid rgba(255,255,255,.1);}
+  .logo-text{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:#fff;letter-spacing:-1px;}
+  .logo-text span{color:#60a5fa;}
+  .logo-sub{font-size:10px;color:rgba(200,217,245,.5);letter-spacing:2.5px;text-transform:uppercase;margin-top:3px;}
+  .nav{flex:1;padding:14px 10px;overflow-y:auto;}
+  .nav-sec{font-size:9.5px;color:rgba(200,217,245,.4);letter-spacing:2px;text-transform:uppercase;padding:10px 12px 5px;}
+  .nav-item{display:flex;align-items:center;gap:11px;padding:10px 14px;border-radius:10px;cursor:pointer;transition:all .18s;font-size:13.5px;color:var(--sidebar-text);margin-bottom:2px;}
+  .nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+  .nav-item.active{background:var(--blue-mid);color:#fff;font-weight:500;box-shadow:0 4px 12px rgba(37,99,235,.4);}
+  .nav-icon{font-size:17px;width:20px;text-align:center;}
+  .sidebar-foot{padding:14px 12px;border-top:1px solid rgba(255,255,255,.1);}
+  .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,.08);border-radius:10px;}
+  .av{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#60a5fa);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:#fff;flex-shrink:0;}
+  .u-name{font-size:13px;font-weight:600;color:#fff;}
+  .u-role{font-size:11px;color:rgba(200,217,245,.6);}
+
+  /* MAIN */
+  .main{margin-left:248px;flex:1;display:flex;flex-direction:column;min-height:100vh;}
+
+  /* TOPBAR */
+  .topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 32px;height:62px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:0 2px 12px rgba(37,99,235,.06);}
+  .page-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;color:var(--blue-dark);}
+  .topbar-right{display:flex;align-items:center;gap:12px;}
+  .date-badge{background:var(--blue-pale);border:1px solid var(--blue-pale2);border-radius:8px;padding:6px 14px;font-size:12px;color:var(--blue-dark);font-weight:500;}
+  .sync-btn{display:flex;align-items:center;gap:6px;padding:8px 16px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .18s;}
+  .sync-btn:hover{background:#1d4ed8;}
+  .sync-btn:disabled{opacity:.6;cursor:not-allowed;}
+  .sync-icon{display:inline-block;font-size:14px;}
+  .sync-btn.spinning .sync-icon{animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .last-sync{font-size:11px;color:var(--muted);}
+
+  /* PAGES */
+  .page{display:none;padding:28px 32px;animation:fadeIn .25s ease;}
+  .page.active{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+  /* SKELETON */
+  .skeleton{background:linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
+  @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+  .skel-stat{height:96px;border-radius:14px;}
+  .skel-row{height:44px;border-radius:6px;margin-bottom:8px;}
+
+  /* STATS */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:16px;margin-bottom:26px;}
+  .stat-card{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px 22px;transition:transform .18s,box-shadow .18s;box-shadow:0 2px 8px rgba(37,99,235,.05);}
+  .stat-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(37,99,235,.1);}
+  .stat-card.accent{background:var(--blue);border-color:var(--blue);}
+  .stat-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px;}
+  .stat-val{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:var(--blue-dark);margin-bottom:2px;}
+  .stat-card.accent .stat-val,.stat-card.accent .stat-label{color:#fff;}
+  .stat-card.accent .stat-label{color:rgba(255,255,255,.75);}
+  .stat-label{font-size:12px;color:var(--muted);}
+  .stat-change{font-size:11px;margin-top:6px;font-weight:500;}
+  .up{color:var(--green)}.down{color:var(--red)}
+  .ic{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;}
+  .ic-blue{background:var(--blue-pale2)}.ic-green{background:#d1fae5}.ic-red{background:#fee2e2}
+  .ic-amber{background:#fef3c7}.ic-purple{background:#ede9fe}.ic-cyan{background:#cffafe}
+  .ic-white{background:rgba(255,255,255,.2)}
+
+  /* CARD */
+  .card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(37,99,235,.05);margin-bottom:22px;}
+  .card-header{padding:16px 22px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .card-title{font-family:'Syne',sans-serif;font-size:14.5px;font-weight:700;color:var(--blue-dark);}
+  .card-body{padding:18px 22px;}
+  .card-header.dark{background:linear-gradient(135deg,#1a3a6b,#2563eb);border:none;}
+  .card-header.dark .card-title{color:#fff;}
+
+  /* BADGE / PILL */
+  .badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;}
+  .b-blue{background:var(--blue-pale2);color:var(--blue)}.b-green{background:#d1fae5;color:#065f46}
+  .b-amber{background:#fef3c7;color:#92400e}.b-red{background:#fee2e2;color:#991b1b}
+  .b-purple{background:#ede9fe;color:#5b21b6}.b-cyan{background:#cffafe;color:#164e63}
+  .b-white{background:rgba(255,255,255,.18);color:#fff;}
+  .pill{display:inline-block;font-size:11px;padding:3px 9px;border-radius:20px;font-weight:600;}
+  .p-green{background:#d1fae5;color:#065f46}.p-blue{background:var(--blue-pale2);color:#1e40af}
+  .p-amber{background:#fef3c7;color:#92400e}.p-red{background:#fee2e2;color:#991b1b}
+  .p-purple{background:#ede9fe;color:#5b21b6}.p-gray{background:#f1f5f9;color:#475569}
+  .p-cyan{background:#cffafe;color:#164e63}
+
+  /* TABLE */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  th{text-align:left;font-size:11px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;padding:10px 16px;background:var(--blue-pale);border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap;}
+  td{padding:11px 16px;font-size:13px;border-bottom:1px solid #f1f5f9;color:var(--text2);}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--blue-pale);}
+
+  /* LAYOUTS */
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:22px;}
+  .wide-narrow{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:22px;}
+
+  /* PROGRESS BAR */
+  .prog-bar{height:7px;background:var(--blue-pale2);border-radius:4px;overflow:hidden;display:inline-block;vertical-align:middle;}
+  .prog-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),#60a5fa);}
+
+  /* SECTION HEADER */
+  .sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+  .sec-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:700;color:var(--blue-dark);}
+  .sec-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+
+  /* DEPT STRIPE */
+  .stripe{height:4px;border-radius:2px;margin-bottom:24px;}
+  .stripe-purple{background:linear-gradient(90deg,#4c1d95,var(--purple),#c4b5fd)}
+  .stripe-blue{background:linear-gradient(90deg,var(--blue-dark),var(--blue-mid),#93c5fd)}
+  .stripe-cyan{background:linear-gradient(90deg,#0e7490,var(--cyan),#67e8f9)}
+  .stripe-amber{background:linear-gradient(90deg,#92400e,var(--amber),#fcd34d)}
+
+  /* WELCOME */
+  .welcome{background:linear-gradient(135deg,var(--blue-dark) 0%,#1e40af 60%,var(--blue) 100%);border-radius:16px;padding:28px 32px;margin-bottom:26px;position:relative;overflow:hidden;color:#fff;}
+  .wc1{position:absolute;top:-50px;right:-50px;width:200px;height:200px;border-radius:50%;background:rgba(255,255,255,.05);}
+  .wc2{position:absolute;bottom:-30px;right:80px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);}
+  .w-title{font-family:'Syne',sans-serif;font-size:24px;font-weight:800;margin-bottom:6px;}
+  .w-sub{font-size:14px;color:rgba(255,255,255,.75);}
+
+  /* DEPT QUICK CARDS */
+  .dept-quick{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px;}
+  .dqc{background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;transition:all .2s;text-align:center;box-shadow:0 2px 8px rgba(37,99,235,.05);}
+  .dqc:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(37,99,235,.12);border-color:#93c5fd;}
+  .dqc-icon{font-size:26px;margin-bottom:10px;}
+  .dqc-name{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--blue-dark);margin-bottom:4px;}
+  .dqc-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--blue-dark);margin-bottom:2px;}
+  .dqc-sub{font-size:11px;color:var(--muted);}
+  .dqc.p{border-top:3px solid var(--purple);}
+  .dqc.b{border-top:3px solid var(--blue);}
+  .dqc.c{border-top:3px solid var(--cyan);}
+  .dqc.a{border-top:3px solid var(--amber);}
+
+  /* ASSET LOAN STRIP */
+  .loan-strip{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--border);}
+  .ls-item{padding:16px 20px;text-align:center;border-right:1px solid var(--border);}
+  .ls-item:last-child{border-right:none;}
+  .ls-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;color:var(--blue-dark);}
+  .ls-label{font-size:11px;color:var(--muted);margin-top:2px;}
+
+  /* TICKET */
+  .ticket{background:#f7f9ff;border:1.5px solid var(--border);border-radius:12px;padding:13px 16px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;transition:all .18s;}
+  .ticket:hover{border-color:#93c5fd;background:var(--blue-pale);}
+  .ticket-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;}
+  .ticket-meta{font-size:11px;color:var(--muted);}
+
+  /* EMPTY / ERROR */
+  .empty{text-align:center;padding:40px 20px;color:var(--muted);}
+  .empty-icon{font-size:36px;margin-bottom:10px;}
+  .empty-text{font-size:14px;}
+  .err-banner{background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#991b1b;display:flex;align-items:flex-start;gap:10px;}
+
+  /* TABS */
+  .tabs{display:flex;gap:6px;margin-bottom:16px;}
+  .tab{padding:6px 16px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--muted);transition:all .18s;}
+  .tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+  /* CONFIG MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+  .modal{background:#fff;border-radius:16px;padding:32px;width:480px;max-width:95vw;box-shadow:0 24px 60px rgba(0,0,0,.2);}
+  .modal-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;color:var(--blue-dark);margin-bottom:6px;}
+  .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6;}
+  .field-label{font-size:12px;font-weight:600;color:var(--text2);margin-bottom:6px;display:block;}
+  .field-input{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text);outline:none;transition:border-color .18s;margin-bottom:14px;}
+  .field-input:focus{border-color:var(--blue);}
+  .modal-actions{display:flex;gap:10px;margin-top:8px;}
+  .btn-save{flex:1;padding:11px;background:var(--blue);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  .btn-save:hover{background:#1d4ed8;}
+  .btn-skip{padding:11px 20px;background:#fff;color:var(--muted);border:1.5px solid var(--border);border-radius:8px;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+  @media(max-width:900px){
+    .sidebar{transform:translateX(-100%);} .main{margin-left:0;}
+    .two-col,.wide-narrow,.dept-quick,.loan-strip{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo">
+    <div class="logo-text">DG<span>L</span></div>
+    <div class="logo-sub">Management System</div>
+  </div>
+  <nav class="nav">
+    <div class="nav-sec">Main</div>
+    <div class="nav-item active" onclick="showPage('overview',this)"><span class="nav-icon">⊞</span>Overview</div>
+    <div class="nav-sec">Departments</div>
+    <div class="nav-item" onclick="showPage('hr',this)"><span class="nav-icon">👥</span>Human Resources</div>
+    <div class="nav-item" onclick="showPage('projects',this)"><span class="nav-icon">📐</span>Projects</div>
+    <div class="nav-item" onclick="showPage('it',this)"><span class="nav-icon">🖥️</span>IT & Facilities</div>
+    <div class="nav-item" onclick="showPage('accounts',this)"><span class="nav-icon">💰</span>Accounts</div>
+    <div class="nav-sec">System</div>
+    <div class="nav-item" onclick="openConfig()"><span class="nav-icon">⚙️</span>API Config</div>
+  </nav>
+  <div class="sidebar-foot">
+    <div class="user-card">
+      <div class="av">AD</div>
+      <div><div class="u-name">Admin</div><div class="u-role">Super Admin</div></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="page-title">Overview</div>
+    <div class="topbar-right">
+      <span class="last-sync" id="last-sync">Not synced yet</span>
+      <button class="sync-btn" id="sync-btn" onclick="fetchAll()">
+        <span class="sync-icon">🔄</span>&nbsp;Sync Notion
+      </button>
+      <div class="date-badge" id="date-badge"></div>
+    </div>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div class="page active" id="page-overview">
+    <div class="welcome">
+      <div class="wc1"></div><div class="wc2"></div>
+      <div class="w-title">DGL Management System</div>
+      <div class="w-sub">Live data from Notion — auto-refreshes every 5 minutes</div>
+    </div>
+    <div id="ov-kpis">
+      <div class="stats-grid">
+        <div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div>
+        <div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div>
+        <div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div>
+      </div>
+    </div>
+    <div class="dept-quick">
+      <div class="dqc p" onclick="nav('hr')"><div class="dqc-icon">👥</div><div class="dqc-name">Human Resources</div><div class="dqc-val" id="ov-emp">—</div><div class="dqc-sub">Employees</div></div>
+      <div class="dqc b" onclick="nav('projects')"><div class="dqc-icon">📐</div><div class="dqc-name">Projects</div><div class="dqc-val" id="ov-proj">—</div><div class="dqc-sub">Active Projects</div></div>
+      <div class="dqc c" onclick="nav('it')"><div class="dqc-icon">🖥️</div><div class="dqc-name">IT & Facilities</div><div class="dqc-val" id="ov-tick">—</div><div class="dqc-sub">Open Tickets</div></div>
+      <div class="dqc a" onclick="nav('accounts')"><div class="dqc-icon">💰</div><div class="dqc-name">Accounts</div><div class="dqc-val" id="ov-rev">—</div><div class="dqc-sub">Revenue (GHS)</div></div>
+    </div>
+  </div>
+
+  <!-- HR -->
+  <div class="page" id="page-hr">
+    <div class="stripe stripe-purple"></div>
+    <div class="sec-header"><div><div class="sec-title">Human Resources</div><div class="sec-sub">Employee directory, attendance & leave management</div></div></div>
+    <div id="hr-kpis"><div class="stats-grid"><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div></div></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">👤 Employee Directory</div><span class="badge b-purple" id="emp-badge">—</span></div>
+      <div class="table-wrap" id="emp-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">📅 Attendance Register</div><span class="badge b-blue" id="att-badge">—</span></div>
+        <div class="table-wrap" id="att-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏖️ Leave Requests</div><span class="badge b-amber" id="leave-badge">—</span></div>
+        <div class="table-wrap" id="leave-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROJECTS -->
+  <div class="page" id="page-projects">
+    <div class="stripe stripe-blue"></div>
+    <div class="sec-header"><div><div class="sec-title">Projects Department</div><div class="sec-sub">Active projects, worker deployment & progress tracking</div></div></div>
+    <div id="proj-kpis"><div class="stats-grid"><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div></div></div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">🚧 Projects & Workers</div><span class="badge b-blue" id="proj-badge">—</span></div>
+      <div class="table-wrap" id="proj-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+    </div>
+  </div>
+
+  <!-- IT -->
+  <div class="page" id="page-it">
+    <div class="stripe stripe-cyan"></div>
+    <div class="sec-header"><div><div class="sec-title">IT & Facility Management</div><div class="sec-sub">Support tickets, maintenance & system access</div></div></div>
+    <div id="it-kpis"><div class="stats-grid"><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div></div></div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🎫 Support Tickets</div><span class="badge b-cyan" id="tick-badge">—</span></div>
+        <div id="tick-list" class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">🔧 Maintenance Schedule</div><span class="badge b-amber" id="maint-badge">—</span></div>
+        <div class="table-wrap" id="maint-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">🔐 System Access Register</div><span class="badge b-blue" id="sys-badge">—</span></div>
+      <div class="table-wrap" id="sys-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTS -->
+  <div class="page" id="page-accounts">
+    <div class="stripe stripe-amber"></div>
+    <div class="sec-header"><div><div class="sec-title">Accounts Department</div><div class="sec-sub">Invoices, assets on loan & financial records</div></div></div>
+    <div id="acc-kpis"><div class="stats-grid"><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div><div class="skeleton skel-stat"></div></div></div>
+
+    <!-- Invoices with tabs -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">🧾 Invoice Register</div><span class="badge b-amber" id="inv-badge">—</span></div>
+      <div class="card-body" style="padding-bottom:0;">
+        <div class="tabs">
+          <div class="tab active" onclick="switchTab('unpaid')">⏳ Unpaid</div>
+          <div class="tab" onclick="switchTab('paid')">✅ Paid</div>
+        </div>
+      </div>
+      <div class="table-wrap" id="inv-unpaid-table"></div>
+      <div class="table-wrap" id="inv-paid-table" style="display:none;"></div>
+    </div>
+
+    <!-- Asset Register -->
+    <div class="card">
+      <div class="card-header dark">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:36px;height:36px;background:rgba(255,255,255,.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;">📦</div>
+          <div><div class="card-title">Asset Register & Lending Record</div><div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:1px;">All company assets and their current status</div></div>
+        </div>
+        <span class="badge b-white" id="asset-badge">—</span>
+      </div>
+      <div class="loan-strip" id="loan-strip">
+        <div class="ls-item"><div class="ls-val" id="ls-loan">—</div><div class="ls-label">On Loan</div></div>
+        <div class="ls-item"><div class="ls-val" id="ls-ret">—</div><div class="ls-label">Returned</div></div>
+        <div class="ls-item"><div class="ls-val" id="ls-over" style="color:var(--red)">—</div><div class="ls-label">Overdue</div></div>
+        <div class="ls-item"><div class="ls-val" id="ls-val" style="color:var(--amber)">—</div><div class="ls-label">Value on Loan (GHS)</div></div>
+      </div>
+      <div class="table-wrap" id="asset-table"><div class="card-body"><div class="skeleton skel-row"></div><div class="skeleton skel-row"></div></div></div>
+    </div>
+  </div>
+</div><!-- /main -->
+
+<!-- CONFIG MODAL -->
+<div class="modal-overlay" id="cfg-modal" style="display:none;">
+  <div class="modal">
+    <div class="modal-title">⚙️ API Configuration</div>
+    <div class="modal-sub">Enter your Vercel deployment URL. The database IDs and Notion token are already pre-configured in the backend.<br><br>Your Vercel URL looks like: <strong>https://your-project.vercel.app</strong></div>
+    <label class="field-label">Vercel API URL</label>
+    <input class="field-input" id="cfg-url" placeholder="https://your-project.vercel.app/api/notion" />
+    <div class="modal-actions">
+      <button class="btn-skip" onclick="closeCfg()">Cancel</button>
+      <button class="btn-save" onclick="saveCfg()">💾 Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CFG_KEY = "dgl_api_url";
+const getUrl  = () => localStorage.getItem(CFG_KEY) || "";
+const setUrl  = v  => localStorage.setItem(CFG_KEY, v);
+
+function openConfig() {
+  document.getElementById("cfg-url").value = getUrl();
+  document.getElementById("cfg-modal").style.display = "flex";
+}
+function closeCfg() { document.getElementById("cfg-modal").style.display = "none"; }
+function saveCfg() {
+  const v = document.getElementById("cfg-url").value.trim();
+  if (v) { setUrl(v); closeCfg(); fetchAll(); }
+}
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+const titles = { overview:"Overview", hr:"Human Resources", projects:"Projects Department", it:"IT & Facility Management", accounts:"Accounts Department" };
+
+function showPage(id, el) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+  document.getElementById("page-" + id).classList.add("active");
+  if (el) el.classList.add("active");
+  document.getElementById("page-title").textContent = titles[id] || id;
+  window.scrollTo(0,0);
+}
+function nav(id) {
+  const el = document.querySelector(`.nav-item[onclick*="'${id}'"]`);
+  showPage(id, el);
+}
+
+// ── DATE ──────────────────────────────────────────────────────────────────────
+document.getElementById("date-badge").textContent =
+  new Date().toLocaleDateString("en-GB",{weekday:"short",year:"numeric",month:"short",day:"numeric"});
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const N   = v => v == null ? "—" : String(v);
+const fmt = v => v == null ? "—" : Number(v).toLocaleString();
+const arr = v => Array.isArray(v) ? v.join(", ") : (v || "—");
+
+function pill(s) {
+  if (!s) return '<span class="pill p-gray">—</span>';
+  const sl = s.toLowerCase();
+  if (/active|present|paid|online|done|approved|complete|return|granted|operational/.test(sl)) return `<span class="pill p-green">${s}</span>`;
+  if (/pending|progress|review|scheduled|planning|loan|assigned|in use/.test(sl))              return `<span class="pill p-blue">${s}</span>`;
+  if (/delay|overdue|absent|reject|critical|alert|damage|warning|expired/.test(sl))            return `<span class="pill p-red">${s}</span>`;
+  if (/medium|low|degraded|partial|fair/.test(sl))                                             return `<span class="pill p-amber">${s}</span>`;
+  return `<span class="pill p-gray">${s}</span>`;
+}
+
+function priPill(p) {
+  if (!p) return "";
+  const pl = p.toLowerCase();
+  if (pl.includes("critical")) return `<span class="pill p-red">🔴 ${p}</span>`;
+  if (pl.includes("high"))     return `<span class="pill p-amber">🟠 ${p}</span>`;
+  if (pl.includes("medium"))   return `<span class="pill p-blue">🟡 ${p}</span>`;
+  return `<span class="pill p-gray">🟢 ${p}</span>`;
+}
+
+function progBar(pct) {
+  const v = Math.min(100, Math.max(0, Number(pct)||0));
+  return `<div style="display:flex;align-items:center;gap:8px;">
+    <div class="prog-bar" style="width:90px"><div class="prog-fill" style="width:${v}%"></div></div>
+    <span style="font-size:11px;color:var(--muted)">${v}%</span></div>`;
+}
+
+function sc(icon, val, label, acc=false, icCls="ic-blue", change="") {
+  return `<div class="stat-card${acc?" accent":""}">
+    <div class="stat-top"><div><div class="stat-val">${val}</div><div class="stat-label">${label}</div></div><div class="ic ${icCls}">${icon}</div></div>
+    ${change?`<div class="stat-change">${change}</div>`:""}
+  </div>`;
+}
+
+function empty(msg="No data found") {
+  return `<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">${msg}</div></div>`;
+}
+
+function invTable(rows) {
+  if (!rows.length) return empty("No invoices found");
+  return `<table>
+    <thead><tr><th>Invoice #</th><th>Client</th><th>Project</th><th>Amount (GHS)</th><th>Issue Date</th><th>Due Date</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>${rows.map(i=>`<tr>
+      <td><strong>${N(i.invoiceNum)}</strong></td>
+      <td>${arr(i.client)}</td>
+      <td>${arr(i.project)}</td>
+      <td><strong>${i.amount!=null?Number(i.amount).toLocaleString():"—"}</strong></td>
+      <td>${N(i.issueDate)}</td>
+      <td>${N(i.dueDate)}</td>
+      <td>${pill(i.status)}</td>
+      <td style="font-size:12px;color:var(--muted)">${N(i.notes)}</td>
+    </tr>`).join("")}</tbody></table>`;
+}
+
+// ── INVOICE TABS ──────────────────────────────────────────────────────────────
+let _invPaid=[], _invUnpaid=[];
+function switchTab(which) {
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  event.target.classList.add("active");
+  document.getElementById("inv-unpaid-table").style.display = which==="unpaid"?"block":"none";
+  document.getElementById("inv-paid-table").style.display   = which==="paid"?"block":"none";
+}
+
+// ── RENDER FUNCTIONS ──────────────────────────────────────────────────────────
+function renderOverview(kpis) {
+  document.getElementById("ov-emp").textContent  = fmt(kpis.hr.totalEmployees);
+  document.getElementById("ov-proj").textContent = fmt(kpis.projects.activeProjects);
+  document.getElementById("ov-tick").textContent = fmt(kpis.it.openTickets);
+  document.getElementById("ov-rev").textContent  = kpis.accounts.totalRevenue
+    ? Number(kpis.accounts.totalRevenue).toLocaleString() : "—";
+
+  document.getElementById("ov-kpis").innerHTML = `<div class="stats-grid">
+    ${sc("👥", fmt(kpis.hr.totalEmployees),       "Total Employees",        true, "ic-white")}
+    ${sc("✅", fmt(kpis.hr.presentToday),          "Present Today",          false,"ic-green")}
+    ${sc("🚧", fmt(kpis.projects.activeProjects),  "Active Projects",        false,"ic-blue")}
+    ${sc("👷", fmt(kpis.projects.totalWorkers),    "Workers Deployed",       false,"ic-blue")}
+    ${sc("🎫", fmt(kpis.it.openTickets),           "Open IT Tickets",        false,"ic-cyan")}
+    ${sc("📦", fmt(kpis.accounts.assetsOnLoan),    "Assets on Loan",         false,"ic-amber",
+        kpis.accounts.overdueAssets>0?`<span class="down">⚠️ ${kpis.accounts.overdueAssets} overdue</span>`:"")}
+  </div>`;
+}
+
+function renderHR(data, kpis) {
+  document.getElementById("hr-kpis").innerHTML = `<div class="stats-grid">
+    ${sc("👥", fmt(kpis.totalEmployees), "Total Employees",       true,  "ic-white")}
+    ${sc("✅", fmt(kpis.presentToday),   "Present Today",         false, "ic-green")}
+    ${sc("🚫", fmt(kpis.absentToday),    "Absent Today",          false, "ic-red")}
+    ${sc("🏖️", fmt(kpis.pendingLeaves), "Pending Leave Requests",false, "ic-amber")}
+    ${sc("📅", fmt(kpis.onLeaveToday),  "On Approved Leave",     false, "ic-purple")}
+    ${sc("👤", fmt(kpis.totalEmployees),"Total Headcount",        false, "ic-blue")}
+  </div>`;
+
+  // Employees
+  const emps = data.employees||[];
+  document.getElementById("emp-badge").textContent = `${emps.length} Staff`;
+  document.getElementById("emp-table").innerHTML = emps.length ? `<table>
+    <thead><tr><th>Name</th><th>Role</th><th>Department</th><th>Contract</th><th>Start Date</th><th>Leave Balance</th><th>Email</th><th>Status</th></tr></thead>
+    <tbody>${emps.map(e=>`<tr>
+      <td><strong>${N(e.name)}</strong></td>
+      <td>${N(e.role)}</td>
+      <td>${N(e.department)}</td>
+      <td>${N(e.contract)}</td>
+      <td>${N(e.startDate)}</td>
+      <td>${e.leaveBalance!=null?e.leaveBalance+" days":"—"}</td>
+      <td style="font-size:12px">${N(e.email)}</td>
+      <td>${pill(e.status)}</td>
+    </tr>`).join("")}</tbody></table>` : empty("No employees found in Notion");
+
+  // Attendance
+  const att = data.attendance||[];
+  document.getElementById("att-badge").textContent = `${att.length} Records`;
+  document.getElementById("att-table").innerHTML = att.length ? `<table>
+    <thead><tr><th>Employee</th><th>Date</th><th>Department</th><th>Status</th><th>Notes</th></tr></thead>
+    <tbody>${att.slice(0,25).map(a=>`<tr>
+      <td><strong>${arr(a.employee)}</strong></td>
+      <td>${N(a.date)}</td>
+      <td>${arr(a.department)}</td>
+      <td>${pill(a.status)}</td>
+      <td style="font-size:12px;color:var(--muted)">${N(a.notes)}</td>
+    </tr>`).join("")}</tbody></table>` : empty("No attendance records found");
+
+  // Leave
+  const lv = data.leaves||[];
+  const pending = lv.filter(l=>l.status?.toLowerCase().includes("pending")).length;
+  document.getElementById("leave-badge").textContent = `${pending} Pending`;
+  document.getElementById("leave-table").innerHTML = lv.length ? `<table>
+    <thead><tr><th>Employee</th><th>Type</th><th>From</th><th>To</th><th>Days</th><th>Status</th><th>Approved By</th><th>Notes</th></tr></thead>
+    <tbody>${lv.slice(0,20).map(l=>`<tr>
+      <td><strong>${arr(l.employee)}</strong></td>
+      <td>${N(l.type)}</td>
+      <td>${N(l.from)}</td>
+      <td>${N(l.to)}</td>
+      <td>${l.days!=null?l.days:"—"}</td>
+      <td>${pill(l.status)}</td>
+      <td>${arr(l.approvedBy)}</td>
+      <td style="font-size:12px;color:var(--muted)">${N(l.notes)}</td>
+    </tr>`).join("")}</tbody></table>` : empty("No leave requests found");
+}
+
+function renderProjects(projects, kpis) {
+  document.getElementById("proj-kpis").innerHTML = `<div class="stats-grid">
+    ${sc("🚧", fmt(kpis.activeProjects),  "Active Projects",       true,  "ic-white")}
+    ${sc("👷", fmt(kpis.totalWorkers),    "Total Workers Deployed",false, "ic-green", '<span class="up">Across all sites</span>')}
+    ${sc("🔴", fmt(kpis.delayedProjects), "Delayed Projects",      false, "ic-red")}
+    ${sc("📋", fmt(projects.length),      "Total Projects",        false, "ic-blue")}
+  </div>`;
+
+  document.getElementById("proj-badge").textContent = `${projects.length} Projects`;
+  document.getElementById("proj-table").innerHTML = projects.length ? `<table>
+    <thead><tr><th>Project</th><th>Client</th><th>PM</th><th>👷 Workers</th><th>Value (GHS)</th><th>Progress</th><th>Site</th><th>Deadline</th><th>Status</th></tr></thead>
+    <tbody>${projects.map(p=>`<tr>
+      <td><strong>${N(p.name)}</strong></td>
+      <td>${arr(p.client)}</td>
+      <td>${arr(p.pm)}</td>
+      <td><strong style="color:var(--blue);font-size:15px">${p.workers!=null?p.workers:"—"}</strong></td>
+      <td>${p.value!=null?Number(p.value).toLocaleString():"—"}</td>
+      <td>${p.progress!=null?progBar(p.progress):"—"}</td>
+      <td>${N(p.site)}</td>
+      <td>${N(p.deadline)}</td>
+      <td>${pill(p.status)}</td>
+    </tr>`).join("")}</tbody></table>` : empty("No projects found in Notion");
+}
+
+function renderIT(data, kpis) {
+  document.getElementById("it-kpis").innerHTML = `<div class="stats-grid">
+    ${sc("🎫", fmt(kpis.openTickets),     "Open Tickets",       true,  "ic-white")}
+    ${sc("🔴", fmt(kpis.criticalTickets), "Critical Tickets",   false, "ic-red")}
+    ${sc("⏳", fmt(kpis.inProgressTickets),"In Progress",       false, "ic-amber")}
+    ${sc("🔧", fmt(data.maintenance?.length||0),"Maintenance Tasks",false,"ic-blue")}
+  </div>`;
+
+  // Tickets
+  const tix = data.tickets||[];
+  document.getElementById("tick-badge").textContent = `${tix.length} Tickets`;
+  document.getElementById("tick-list").innerHTML = tix.length
+    ? tix.slice(0,10).map(t=>`<div class="ticket">
+        <div style="flex:1">
+          <div class="ticket-title">${N(t.issue)}</div>
+          <div class="ticket-meta">${arr(t.assignedTo)} · ${N(t.category)} · ${N(t.dateRaised)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">${priPill(t.priority)}${pill(t.status)}</div>
+      </div>`).join("")
+    : empty("No tickets found");
+
+  // Maintenance
+  const maint = data.maintenance||[];
+  document.getElementById("maint-badge").textContent = `${maint.length} Tasks`;
+  document.getElementById("maint-table").innerHTML = maint.length ? `<table>
+    <thead><tr><th>Task</th><th>Location</th><th>Assigned To</th><th>Date</th><th>Status</th></tr></thead>
+    <tbody>${maint.map(m=>`<tr>
+      <td>${N(m.task)}</td><td>${N(m.location)}</td>
+      <td>${arr(m.assignedTo)}</td><td>${N(m.date)}</td><td>${pill(m.status)}</td>
+    </tr>`).join("")}</tbody></table>` : `<div class="card-body">${empty("No maintenance tasks found")}</div>`;
+
+  // System Access
+  const sys = data.systemAccess||[];
+  document.getElementById("sys-badge").textContent = `${sys.length} Records`;
+  document.getElementById("sys-table").innerHTML = sys.length ? `<table>
+    <thead><tr><th>Name / System</th><th>Employee</th><th>Access Level</th><th>Granted By</th><th>Date Granted</th><th>Expiry</th><th>Status</th></tr></thead>
+    <tbody>${sys.map(s=>`<tr>
+      <td><strong>${N(s.name)}</strong></td>
+      <td>${arr(s.employee)}</td>
+      <td>${N(s.accessLevel)}</td>
+      <td>${arr(s.grantedBy)}</td>
+      <td>${N(s.dateGranted)}</td>
+      <td>${N(s.expiryDate)}</td>
+      <td>${pill(s.status)}</td>
+    </tr>`).join("")}</tbody></table>` : `<div class="card-body">${empty("No system access records found")}</div>`;
+}
+
+function renderAccounts(data, kpis) {
+  document.getElementById("acc-kpis").innerHTML = `<div class="stats-grid">
+    ${sc("💵", Number(kpis.totalRevenue||0).toLocaleString(), "Total Revenue (GHS)",  true,  "ic-white")}
+    ${sc("📤", Number(kpis.outstanding||0).toLocaleString(),  "Outstanding (GHS)",    false, "ic-red")}
+    ${sc("🧾", fmt(kpis.totalInvoices),                       "Total Invoices",       false, "ic-blue")}
+    ${sc("🔴", fmt(kpis.overdueInvoices),                     "Overdue Invoices",     false, "ic-red")}
+    ${sc("📦", fmt(kpis.assetsOnLoan),                        "Assets on Loan",       false, "ic-amber")}
+    ${sc("⚠️", fmt(kpis.overdueAssets),                       "Overdue Returns",      false, "ic-red")}
+  </div>`;
+
+  // Invoices
+  _invUnpaid = data.invoicesUnpaid||[];
+  _invPaid   = data.invoicesPaid||[];
+  document.getElementById("inv-badge").textContent = `${_invUnpaid.length} Unpaid · ${_invPaid.length} Paid`;
+  document.getElementById("inv-unpaid-table").innerHTML = invTable(_invUnpaid);
+  document.getElementById("inv-paid-table").innerHTML   = invTable(_invPaid);
+
+  // Asset register
+  const assets = data.assets||[];
+  const onLoan   = assets.filter(a=>/loan|lent|out/i.test(a.status||"")).length;
+  const returned = assets.filter(a=>/return/i.test(a.status||"")).length;
+  const overdue  = assets.filter(a=>/overdue/i.test(a.status||"")).length;
+  const val      = assets.filter(a=>!a.actualReturn).reduce((s,a)=>s+(Number(a.value)||0),0);
+
+  document.getElementById("asset-badge").textContent = `${assets.length} Assets`;
+  document.getElementById("ls-loan").textContent = onLoan;
+  document.getElementById("ls-ret").textContent  = returned;
+  document.getElementById("ls-over").textContent = overdue;
+  document.getElementById("ls-val").textContent  = Number(val).toLocaleString();
+
+  document.getElementById("asset-table").innerHTML = assets.length ? `<table>
+    <thead><tr><th>Asset</th><th>Category</th><th>Tag / Serial</th><th>Assigned To</th><th>Dept</th><th>Value (GHS)</th><th>Date Lent</th><th>Expected Return</th><th>Actual Return</th><th>Cond. Out</th><th>Cond. In</th><th>Location</th><th>Status</th></tr></thead>
+    <tbody>${assets.map(a=>`<tr>
+      <td><strong>${N(a.name)}</strong></td>
+      <td>${N(a.category)}</td>
+      <td style="font-size:12px;color:var(--muted)">${N(a.assetTag)||N(a.serialNumber)}</td>
+      <td>${arr(a.assignedTo)}</td>
+      <td>${N(a.department)}</td>
+      <td>${a.value!=null?Number(a.value).toLocaleString():"—"}</td>
+      <td>${N(a.dateLent)}</td>
+      <td>${N(a.expectedReturn)}</td>
+      <td>${N(a.actualReturn)}</td>
+      <td>${pill(a.conditionOut)}</td>
+      <td>${pill(a.conditionIn)}</td>
+      <td>${N(a.location)}</td>
+      <td>${pill(a.status)}</td>
+    </tr>`).join("")}</tbody></table>` : `<div class="card-body">${empty("No asset records found")}</div>`;
+}
+
+// ── FETCH ALL ─────────────────────────────────────────────────────────────────
+let autoTimer = null;
+
+async function fetchAll() {
+  const url = getUrl();
+  if (!url) { openConfig(); return; }
+
+  const btn = document.getElementById("sync-btn");
+  btn.classList.add("spinning"); btn.disabled = true;
+
+  // clear previous errors
+  document.querySelectorAll(".err-banner").forEach(e=>e.remove());
+
+  try {
+    const res  = await fetch(url, { cache:"no-store" });
+    const text = await res.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error("Invalid response from API: " + text.slice(0,200)); }
+    if (data.error) throw new Error(data.error);
+
+    renderOverview(data.kpis);
+    renderHR(data.hr,        data.kpis.hr);
+    renderProjects(data.projects, data.kpis.projects);
+    renderIT(data.it,        data.kpis.it);
+    renderAccounts(data.accounts, data.kpis.accounts);
+
+    document.getElementById("last-sync").textContent =
+      "Synced " + new Date().toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"});
+
+    clearTimeout(autoTimer);
+    autoTimer = setTimeout(fetchAll, 5*60*1000);
+
+  } catch(err) {
+    console.error(err);
+    document.getElementById("last-sync").textContent = "⚠️ Sync failed";
+    const banner = `<div class="err-banner">⚠️ <div><strong>Sync Error:</strong> ${err.message}<br><span style="font-size:12px">Check your API URL in ⚙️ API Config, or make sure Vercel is deployed correctly.</span></div></div>`;
+    document.getElementById("page-overview").insertAdjacentHTML("afterbegin", banner);
+  } finally {
+    btn.classList.remove("spinning"); btn.disabled = false;
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(function(){
+  if (getUrl()) fetchAll();
+  else setTimeout(openConfig, 600);
+})();
+</script>
+</body>
+</html>
