@@ -2,7 +2,7 @@
 // DGL Management System — Vercel Serverless Notion Proxy
 // Database IDs and token are pre-configured — no env vars needed.
 
-const NOTION_VERSION = "2022-06-01";
+const NOTION_VERSION = "2026-03-11";
 const BASE           = "https://api.notion.com/v1";
 
 // ── Pre-configured credentials ────────────────────────────────────────────────
